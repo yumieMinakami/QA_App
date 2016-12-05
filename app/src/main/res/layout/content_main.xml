@@ -13,7 +13,7 @@
     tools:context="jp.techacademy.yumie.minakami.qa_app.MainActivity"
     tools:showIn="@layout/activity_main">
 
-    <TextView
+    <ListView
         android:id="@+id/listView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
