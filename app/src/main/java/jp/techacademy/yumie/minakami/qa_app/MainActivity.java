@@ -7,13 +7,13 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
-import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -27,14 +27,19 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import static jp.techacademy.yumie.minakami.qa_app.R.id.nav_favorite;
+import static jp.techacademy.yumie.minakami.qa_app.R.id.nav_menu;
 
 public class MainActivity extends AppCompatActivity {
 
     private Toolbar mToolbar;
     private int     mGenre = 0;
+    private boolean mFavFlag;
 
     // Member vars for access to Firebase
     private DatabaseReference   mDatabaseReference;
@@ -122,10 +127,94 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private ChildEventListener mFavEventListener = new ChildEventListener() {
+        @Override
+        public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+//            HashMap hm = (HashMap) dataSnapshot.getValue();
+//            String Quid = (String) hm.get("key");
+//            Log.d("favref", String.format("onChildAdded ::: getkey() = %s, key = %s, value = %s", dataSnapshot.getKey(), hm.get("key"), hm.get("value")));
+            Log.d("favref", String.format("onChildAdded ::: getkey() = %s", dataSnapshot.getKey()));
+            String sFav = (String) dataSnapshot.getKey();
+            Query q = mDatabaseReference.child(Const.ContentsPATH).orderByKey().equalTo(sFav);
+            q.addChildEventListener(new ChildEventListener() {
+                @Override
+                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                    Question qstn = dataSnapshot.getValue(Question.class);
+                    String title = qstn.getTitle();
+                    String body = qstn.getBody();
+                    String name = qstn.getName();
+                    String uid = (String) qstn.getUid();
+                    byte[] bytes = qstn.getImageBytes();
+
+                    ArrayList<Answer> answerArrayList = qstn.getAnswers();
+
+                    Question question = new Question(title, body, name, uid, dataSnapshot.getKey(), mGenre, bytes, answerArrayList);
+                    mQuestionArrayList.add(question);   // Add ArrayList
+                    mAdapter.notifyDataSetChanged();
+                }
+
+                @Override
+                public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                    Log.d("favref", "query onchildchanged");
+                }
+
+                @Override
+                public void onChildRemoved(DataSnapshot dataSnapshot) {
+                }
+
+                @Override
+                public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                }
+            });
+        }
+
+        @Override
+        public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+//            HashMap hm = (HashMap) dataSnapshot.getValue();
+//            Log.d("favref", String.format("onChildchanged ::: getkey() = %s, keyset = %s", dataSnapshot.getKey(), hm.keySet()));
+            Log.d("favref", String.format("onChildchanged ::: getkey() = %s", dataSnapshot.getKey()));
+
+        }
+
+        @Override
+        public void onChildRemoved(DataSnapshot dataSnapshot) {
+            HashMap hm = (HashMap) dataSnapshot.getValue();
+            Log.d("favref", String.format("onChildRemoved ::: keyset = %s", hm.keySet()));
+            Question qstn = dataSnapshot.getValue(Question.class);
+            String title = qstn.getTitle();
+            String body = qstn.getBody();
+            String name = qstn.getName();
+            String uid = (String) qstn.getUid();
+            byte[] bytes = qstn.getImageBytes();
+
+            ArrayList<Answer> answerArrayList = qstn.getAnswers();
+
+            Question question = new Question(title, body, name, uid, dataSnapshot.getKey(), mGenre, bytes, answerArrayList);
+            mQuestionArrayList.remove(question);   // remove ArrayList
+            mAdapter.notifyDataSetChanged();
+        }
+
+        @Override
+        public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+        }
+
+        @Override
+        public void onCancelled(DatabaseError databaseError) {
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if(mDatabaseReference == null && savedInstanceState == null){
+            FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+        }
 
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
@@ -156,16 +245,27 @@ public class MainActivity extends AppCompatActivity {
 
         // Set Navigation drawer
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, mToolbar, R.string.app_name, R.string.app_name);
+        final ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, mToolbar, R.string.app_name, R.string.app_name);
         drawer.addDrawerListener(toggle);
-        toggle.syncState();
+        toggle.syncState();     // Synchronize  with the linked DrawerLayout
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        final NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);   // Get ID of NavigationView
+//1214
+//        FirebaseUser usr = FirebaseAuth.getInstance().getCurrentUser();
+//        if(usr == null){
+//            navigationView.getMenu().removeItem(R.id.nav_favorite);
+//        } else {
+//            navigationView.getMenu().add(nav_menu, R.id.nav_favorite, 5, "お気に入り");
+//        }
+//1214
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener(){
             @Override
-            public boolean onNavigationItemSelected(MenuItem item){
+            public boolean onNavigationItemSelected(MenuItem item){ // If chosen any items on NavigationView
                 int id = item.getItemId();
 
+                mFavFlag = false;
+
+                // Set title of screen depending on chosen item
                 if(id == R.id.nav_hobby){
                     mToolbar.setTitle("趣味");
                     mGenre = 1;
@@ -178,6 +278,9 @@ public class MainActivity extends AppCompatActivity {
                 } else if (id == R.id.nav_computer){
                     mToolbar.setTitle("コンピューター");
                     mGenre = 4;
+                } else if (id == nav_favorite){
+                    mToolbar.setTitle("お気に入り");
+                    mFavFlag = true;
                 }
 
                 DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -185,15 +288,21 @@ public class MainActivity extends AppCompatActivity {
 
                 // Set Adapter again after clear the Question list, and reset Adapter to ListView
                 mQuestionArrayList.clear();
-                mAdapter.setmQuestionArrayList(mQuestionArrayList);
+                mAdapter.setQuestionArrayList(mQuestionArrayList);
                 mListView.setAdapter(mAdapter);
 
                 // Set Listener to selected genre
                 if(mGenreRef != null){
                     mGenreRef.removeEventListener(mEventListener);
                 }
+                if(mFavFlag == true){
+                    FirebaseUser usr = FirebaseAuth.getInstance().getCurrentUser();
+                    mGenreRef = mDatabaseReference.child(Const.UsersPATH).child(usr.getUid()).child(Const.FavPATH);
+                    mGenreRef.addChildEventListener(mFavEventListener);
+                }
                 mGenreRef = mDatabaseReference.child(Const.ContentsPATH).child(String.valueOf(mGenre));
                 mGenreRef.addChildEventListener(mEventListener);
+
 
                 return true;
             }

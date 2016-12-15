@@ -11,4 +11,5 @@ public class Const {
     public static final String ContentsPATH = "contents";   // Path for saving questions to Firebase
     public static final String AnswersPATH = "answers";     // Path for saving answers to Firebase
     public static final String NameKEY = "name";             // Key which saves displayed name on Firebase
+    public static final String FavPATH = "fav";             // Path for saving favorite check
 }

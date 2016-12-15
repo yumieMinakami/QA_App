@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 
@@ -15,6 +16,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class QuestionDetailActivity extends AppCompatActivity {
@@ -27,23 +29,25 @@ public class QuestionDetailActivity extends AppCompatActivity {
     private ChildEventListener mEventListener = new ChildEventListener() {
         @Override
         public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+
             HashMap map = (HashMap) dataSnapshot.getValue();
-            String answerUid = dataSnapshot.getKey();
 
-            for (Answer answer : mQuestion.getAnswers()) {
-                // Do nothing if same AnswerUid exists
-                if (answerUid.equals(answer.getAnswerUid())) {
-                    return;
+                String answerUid = dataSnapshot.getKey();
+
+                for (Answer answer : mQuestion.getAnswers()) {
+                    // Do nothing if same AnswerUid exists
+                    if (answerUid.equals(answer.getAnswerUid())) {
+                        return;
+                    }
                 }
-            }
 
-            String body = (String) map.get("body");
-            String name = (String) map.get("name");
-            String uid = (String) map.get("uid");
+                String body = (String) map.get("body");
+                String name = (String) map.get("name");
+                String uid = (String) map.get("uid");
 
-            Answer answer = new Answer(body, name, uid, answerUid);
-            mQuestion.getAnswers().add(answer);
-            mAdapter.notifyDataSetChanged();
+                Answer answer = new Answer(body, name, uid, answerUid);
+                mQuestion.getAnswers().add(answer);
+                mAdapter.notifyDataSetChanged();
         }
 
         @Override

@@ -7,16 +7,17 @@ import java.util.ArrayList;
  * Created by user on 2016/12/02.
  */
 
+// Class for holding data which gotten questions from Firebasse
 public class Question implements Serializable {
 
     private String              mTitle;             // A title which got from Firebase
     private String              mBody;              // Content which got from Firebase
     private String              mName;              // A questioner which got from Firebase
     private String              mUid;               // Questioner's UID which got from Firebase
-    private String              mQuestionUid;      // Question's UID which got from Firebase
-    private int                 mGenre;            // A genre of question
-    private byte[]              mBitmapArray;     // A Bitmap which got from Firebase arrays by Byte-type
-    private ArrayList<Answer>   mAnswerArrayList; // ArrayList of Answer which is a model class of question which got from Firebase
+    private String              mQuestionUid;       // Question's UID which got from Firebase
+    private int                 mGenre;             // A genre of question
+    private byte[]              mBitmapArray;       // A Bitmap which got from Firebase arrays by Byte-type
+    private ArrayList<Answer>   mAnswerArrayList;   // ArrayList of Answer which is a model class of question which got from Firebase
 
     public String getTitle(){
         return   mTitle;
@@ -30,7 +31,7 @@ public class Question implements Serializable {
         return mName;
     }
 
-    public String getmUid(){
+    public String getUid(){
         return mUid;
     }
 
@@ -59,7 +60,6 @@ public class Question implements Serializable {
         mGenre = genre;
         mBitmapArray = bytes.clone();
         mAnswerArrayList = answers;
-
     }
 
 }

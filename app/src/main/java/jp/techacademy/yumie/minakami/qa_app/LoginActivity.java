@@ -34,10 +34,10 @@ public class LoginActivity extends AppCompatActivity {
     EditText        mNameEditText;
     ProgressDialog  mProgress;          // Progress Dialog during login/creating account
 
-    FirebaseAuth                    mAuth;
-    OnCompleteListener<AuthResult>  mCreateAccountListener;
-    OnCompleteListener<AuthResult>  mLoginListener;     //
-    DatabaseReference               mDataBaseReference; // Read/Write to DB
+    FirebaseAuth                    mAuth;                  // The entry point of the Firebase Authentication SDK.
+    OnCompleteListener<AuthResult>  mCreateAccountListener; // Listener called when "AuthResult(authentication related operation)" completes for account creation
+    OnCompleteListener<AuthResult>  mLoginListener;     // Listener called when "AuthResult(authentication related operation)" completes for login
+    DatabaseReference               mDataBaseReference; // Read/Write to DB; The entry point for accessing a Firebase Database
 
     boolean mIsCreateAccount = false;   // Set flag in account creation, and save name on Firebase after login process
 
@@ -45,11 +45,11 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
+        setContentView(R.layout.activity_login);    // Creating a window for placable UI
 
-        mDataBaseReference = FirebaseDatabase.getInstance().getReference();
+        mDataBaseReference = FirebaseDatabase.getInstance().getReference(); // Gets a DatabaseReference for the provided path
 
-        mAuth = FirebaseAuth.getInstance();     // Get FirebaseAuth obj
+        mAuth = FirebaseAuth.getInstance();     // Gets the instance of FirebaseDatabase
 
         // Create a Listener for account creation process
         mCreateAccountListener = new OnCompleteListener<AuthResult>() {
@@ -76,25 +76,25 @@ public class LoginActivity extends AppCompatActivity {
             public void onComplete(@NonNull Task<AuthResult> task) {
                 if(task.isSuccessful()){
                     // if succeeded
-                    FirebaseUser user = mAuth.getCurrentUser();
-                    DatabaseReference userRef = mDataBaseReference.child(Const.UsersPATH).child(user.getUid());
+                    FirebaseUser user = mAuth.getCurrentUser(); // Get current signed-in user obj
+                    DatabaseReference userRef = mDataBaseReference.child(Const.UsersPATH).child(user.getUid()); // Get a reference to location relative to this one
 
-                    if(mIsCreateAccount){   // Login by pushing Account create Button
+                    if(mIsCreateAccount){   // Login by pushing Account creation
                         // Save displayed name to Firebase in creating account
                         String name = mNameEditText.getText().toString();
 
-                        Map<String, String> data = new HashMap<String, String>();
+                        Map<String, String> data = new HashMap<String, String>();   // Create array for user's name
                         data.put("name", name);
-                        userRef.setValue(data);
+                        userRef.setValue(data); // Set the data at userRef to data.
 
                         // Save displayed name to Preference
                         saveName(name);
 
-                    } else {    // Login by tapping login button
+                    } else {    // Login by registered user
                         // Get displayed name from Firebase and save to Preference
-                        userRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                        userRef.addListenerForSingleValueEvent(new ValueEventListener() {   // Get data only one time
                             @Override
-                            public void onDataChange(DataSnapshot snapshot) {
+                            public void onDataChange(DataSnapshot snapshot) {   // DataSnapshot : this instance has data from a Firebase DB loc. When reading data from DB, it's received the data as a DataSnapshot
                                 Map data = (Map) snapshot.getValue();
                                 saveName((String) data.get("name"));
                             }
@@ -194,7 +194,7 @@ public class LoginActivity extends AppCompatActivity {
             // addOnCompleteListener() : Set listener
     }
 
-    // Preferenceに表示名保存
+    // Preference (local) に表示名保存
     private void saveName(String name){
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = sp.edit();

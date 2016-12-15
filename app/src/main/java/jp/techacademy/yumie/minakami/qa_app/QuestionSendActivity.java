@@ -185,7 +185,7 @@ public class QuestionSendActivity extends AppCompatActivity implements View.OnCl
                 data.put("image", bitmapString);
             }
 
-            genreRef.push().setValue(data, this);
+            genreRef.push().setValue(data, this);   // Save list of data into DB
             mProgress.show();
         }
     }

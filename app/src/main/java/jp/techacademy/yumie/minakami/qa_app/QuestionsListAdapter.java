@@ -10,7 +10,6 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 /**
@@ -44,7 +43,7 @@ public class QuestionsListAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent){
         if(convertView == null){
-            convertView = mLayoutInflater.inflate(R.layout.list_questins, parent, false);
+            convertView = mLayoutInflater.inflate(R.layout.list_questins, parent, false);   // Inflate a new view hierarchy from list_questions.
         }
 
         TextView titleText = (TextView) convertView.findViewById(R.id.titleTextView);
@@ -67,7 +66,7 @@ public class QuestionsListAdapter extends BaseAdapter {
         return convertView;
     }
 
-    public void setmQuestionArrayList(ArrayList<Question> questionArrayList){
+    public void setQuestionArrayList(ArrayList<Question> questionArrayList){
         mQuestionArrayList = questionArrayList;
     }
 }

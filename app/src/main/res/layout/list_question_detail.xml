@@ -31,4 +31,24 @@
         android:layout_alignParentBottom="true"
         android:textAppearance="?android:attr/textAppearanceSmall" />
 
+    <ImageButton
+     android:id="@+id/favIbtnOff"
+     android:background="#00000000"
+     android:src="@drawable/fav_off"
+     android:visibility="visible"
+     android:layout_alignParentTop="true"
+     android:layout_alignParentEnd="true"
+     android:layout_width="38dp"
+     android:layout_height="38dp"/>
+
+    <ImageButton
+        android:id="@+id/favIbtnOn"
+        android:background="#00000000"
+        android:src="@drawable/fav_on"
+        android:visibility="invisible"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_width="38dp"
+        android:layout_height="38dp"/>
+
 </RelativeLayout>

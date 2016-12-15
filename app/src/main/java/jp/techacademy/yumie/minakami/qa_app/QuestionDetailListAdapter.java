@@ -3,12 +3,22 @@ package jp.techacademy.yumie.minakami.qa_app;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+
+import java.util.HashMap;
 
 /**
  * Created by user on 2016/12/02.
@@ -22,6 +32,10 @@ public class QuestionDetailListAdapter extends BaseAdapter {
 
     private LayoutInflater mLayoutInflater = null;
     private Question mQuestion;
+    private DatabaseReference mRef;
+    private DatabaseReference mFavRef;
+    private FirebaseUser mUser;
+    private String mUserId;
 
     public QuestionDetailListAdapter(Context context, Question question){
         mLayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -76,11 +90,72 @@ public class QuestionDetailListAdapter extends BaseAdapter {
             nameTextView.setText(name);
 
             byte[] bytes = mQuestion.getImageBytes();
-            if(bytes.length != 0){
+            if(bytes.length != 0) {
                 Bitmap image = BitmapFactory.decodeByteArray(bytes, 0, bytes.length).copy(Bitmap.Config.ARGB_8888, true);
                 ImageView imageView = (ImageView) convertView.findViewById(R.id.imageView);
                 imageView.setImageBitmap(image);
             }
+
+            final ImageButton favImgBtnOff = (ImageButton) convertView.findViewById(R.id.favIbtnOff);
+            final ImageButton favImgBunOn = (ImageButton) convertView.findViewById(R.id.favIbtnOn);
+
+            mUser = FirebaseAuth.getInstance().getCurrentUser();
+            mRef = FirebaseDatabase.getInstance().getReference();
+            mUserId = mUser.getUid();
+            mFavRef = mRef.child(Const.UsersPATH).child(mUserId.toString()).child(Const.FavPATH);
+//            Query qry = mFavRef.orderByKey().equalTo(mQuestion.getQuestionUid());
+            Query qry = mFavRef.equalTo(mQuestion.getQuestionUid());
+            if(qry != null){
+                favImgBtnOff.setVisibility(View.INVISIBLE);
+                favImgBunOn.setVisibility(View.VISIBLE);
+            }
+
+            favImgBtnOff.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.d("favrev", "FavButton ON");
+                    favImgBtnOff.setVisibility(v.INVISIBLE);
+                    favImgBunOn.setVisibility(v.VISIBLE);
+
+//                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+//                    String userId = mUser.getUid();
+//                    DatabaseReference favref = FirebaseDatabase.getInstance().getReference()
+//                    DatabaseReference favref = mRef
+//                            .child(Const.UsersPATH)
+//                            .child(mUserId.toString())
+//                            .child(Const.FavPATH);
+                    HashMap<String, Object> dataFav = new HashMap<String, Object>();
+                    dataFav.put(mQuestion.getQuestionUid(), true);
+//                    dataFav.put("quid", mQuestion.getQuestionUid());
+//                    favref.push().updateChildren(dataFav); // "push" with unique id
+//                    favref.updateChildren(dataFav);
+                    mFavRef.updateChildren(dataFav);
+                }
+            });
+
+            favImgBunOn.setOnClickListener(new View.OnClickListener(){
+                @Override
+                public void onClick(View v){
+                    Log.d("favref", "FavButton : OFF");
+                    favImgBunOn.setVisibility(v.INVISIBLE);
+                    favImgBtnOff.setVisibility(v.VISIBLE);
+
+//                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+//                    String userId = mUser.getUid();
+//                    DatabaseReference favref = FirebaseDatabase.getInstance().getReference()
+//                    DatabaseReference favref = mRef
+//                            .child(Const.UsersPATH)
+//                            .child(userId.toString())
+//                            .child(Const.FavPATH);
+                    HashMap<String, Object> dataFav = new HashMap<String, Object>();
+                    dataFav.put(mQuestion.getQuestionUid(), null);
+//                    dataFav.put("quid", null);
+//                    favref.updateChildren(dataFav);
+                    mFavRef.updateChildren(dataFav);
+//                    favref.push().updateChildren(dataFav); // "push" with unique id
+//                    favref.removeValue();     // gone all items under pointed lobation
+                }
+            });
         } else {
             if(convertView == null){
                 convertView = mLayoutInflater.inflate(R.layout.list_answer, parent, false);
