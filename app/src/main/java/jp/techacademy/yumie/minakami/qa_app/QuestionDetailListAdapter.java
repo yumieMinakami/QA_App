@@ -14,16 +14,23 @@ import android.widget.TextView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.HashMap;
+
+import static android.view.View.INVISIBLE;
+import static android.view.View.VISIBLE;
 
 /**
  * Created by user on 2016/12/02.
  */
 
+//public class QuestionDetailListAdapter extends BaseAdapter {
 public class QuestionDetailListAdapter extends BaseAdapter {
 
     // Consts for flag of layout
@@ -103,19 +110,35 @@ public class QuestionDetailListAdapter extends BaseAdapter {
             mRef = FirebaseDatabase.getInstance().getReference();
             mUserId = mUser.getUid();
             mFavRef = mRef.child(Const.UsersPATH).child(mUserId.toString()).child(Const.FavPATH);
-//            Query qry = mFavRef.orderByKey().equalTo(mQuestion.getQuestionUid());
-            Query qry = mFavRef.equalTo(mQuestion.getQuestionUid());
-            if(qry != null){
-                favImgBtnOff.setVisibility(View.INVISIBLE);
-                favImgBunOn.setVisibility(View.VISIBLE);
-            }
+//            mFavRef = mRef.child(Const.UsersPATH).child(mUserId.toString()).child(Const.FavPATH).child(mQuestion.getQuestionUid());
+            Query qry = mFavRef.orderByKey().equalTo(mQuestion.getQuestionUid());
+//            Query qry = mFavRef.equalTo(mQuestion.getQuestionUid());
+            qry.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    if(dataSnapshot.getValue() != null) {
+                        favImgBtnOff.setVisibility(INVISIBLE);
+                        favImgBunOn.setVisibility(VISIBLE);
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
+
+//            if(qry != null){
+//                favImgBtnOff.setVisibility(View.INVISIBLE);
+//                favImgBunOn.setVisibility(View.VISIBLE);
+//            }
 
             favImgBtnOff.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     Log.d("favrev", "FavButton ON");
-                    favImgBtnOff.setVisibility(v.INVISIBLE);
-                    favImgBunOn.setVisibility(v.VISIBLE);
+                    favImgBtnOff.setVisibility(INVISIBLE);
+                    favImgBunOn.setVisibility(VISIBLE);
 
 //                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 //                    String userId = mUser.getUid();
@@ -125,7 +148,7 @@ public class QuestionDetailListAdapter extends BaseAdapter {
 //                            .child(mUserId.toString())
 //                            .child(Const.FavPATH);
                     HashMap<String, Object> dataFav = new HashMap<String, Object>();
-                    dataFav.put(mQuestion.getQuestionUid(), true);
+                    dataFav.put(mQuestion.getQuestionUid(), mQuestion.getGenre());
 //                    dataFav.put("quid", mQuestion.getQuestionUid());
 //                    favref.push().updateChildren(dataFav); // "push" with unique id
 //                    favref.updateChildren(dataFav);
@@ -137,8 +160,8 @@ public class QuestionDetailListAdapter extends BaseAdapter {
                 @Override
                 public void onClick(View v){
                     Log.d("favref", "FavButton : OFF");
-                    favImgBunOn.setVisibility(v.INVISIBLE);
-                    favImgBtnOff.setVisibility(v.VISIBLE);
+                    favImgBunOn.setVisibility(INVISIBLE);
+                    favImgBtnOff.setVisibility(VISIBLE);
 
 //                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 //                    String userId = mUser.getUid();

@@ -23,8 +23,8 @@
     <!--group android:checkableBehavior="single"
         android:id="@+id/nav_menu2">
         <item
-            android:id="@+id/nav_favorite"
-            android:title="お気に入り"/>
+            android:id="@+id/nav_favorite2"
+            android:title="お気に入り2"/>
     </group-->
 
 </menu>

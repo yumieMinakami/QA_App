@@ -19,6 +19,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -32,8 +33,8 @@ import com.google.firebase.database.Query;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import static jp.techacademy.yumie.minakami.qa_app.R.id.nav_favorite;
-import static jp.techacademy.yumie.minakami.qa_app.R.id.nav_menu;
+import static android.view.View.INVISIBLE;
+import static android.view.View.VISIBLE;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -125,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onCancelled(DatabaseError databaseError) {
         }
-    };
+    };      // for adding/changing q & a
 
     private ChildEventListener mFavEventListener = new ChildEventListener() {
         @Override
@@ -133,20 +134,41 @@ public class MainActivity extends AppCompatActivity {
 //            HashMap hm = (HashMap) dataSnapshot.getValue();
 //            String Quid = (String) hm.get("key");
 //            Log.d("favref", String.format("onChildAdded ::: getkey() = %s, key = %s, value = %s", dataSnapshot.getKey(), hm.get("key"), hm.get("value")));
-            Log.d("favref", String.format("onChildAdded ::: getkey() = %s", dataSnapshot.getKey()));
+            Log.d("favref", String.format("onChildAdded ::: getkey() = %s getvalue() = %s", dataSnapshot.getKey(), dataSnapshot.getValue()));
             String sFav = (String) dataSnapshot.getKey();
-            Query q = mDatabaseReference.child(Const.ContentsPATH).orderByKey().equalTo(sFav);
+//            Query q = mDatabaseReference.child(Const.ContentsPATH).child("genre").orderByKey().equalTo(sFav);
+            Query q = mDatabaseReference.child(Const.ContentsPATH).child(dataSnapshot.getValue().toString()).orderByKey().equalTo(sFav);
+            Log.d("favref", String.format("onChildAdded ::: q = %s", q));
             q.addChildEventListener(new ChildEventListener() {
                 @Override
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                    Question qstn = dataSnapshot.getValue(Question.class);
-                    String title = qstn.getTitle();
-                    String body = qstn.getBody();
-                    String name = qstn.getName();
-                    String uid = (String) qstn.getUid();
-                    byte[] bytes = qstn.getImageBytes();
+                    HashMap  map         = (HashMap) dataSnapshot.getValue();
+                    String   title       = (String) map.get("title");
+                    String   body        = (String) map.get("body");
+                    String   name        = (String) map.get("name");
+                    String   uid         = (String) map.get("uid");
+                    String   imageString = (String) map.get("image");
+                    Bitmap   image       = null;
+                    byte[]   bytes;
 
-                    ArrayList<Answer> answerArrayList = qstn.getAnswers();
+                    if(imageString != null){
+                        BitmapFactory.Options options = new BitmapFactory.Options();
+                        bytes = Base64.decode(imageString, Base64.DEFAULT);
+                    } else {
+                        bytes = new byte[0];
+                    }
+                    ArrayList<Answer> answerArrayList = new ArrayList<Answer>();
+                    HashMap answerMap = (HashMap) map.get("ansers");
+                    if(answerMap != null){
+                        for(Object key : answerMap.keySet()){
+                            HashMap temp = (HashMap) answerMap.get((String) key);
+                            String answereBody = (String) temp.get("body");
+                            String answerName = (String) temp.get("name");
+                            String answerUid = (String) temp.get("uid");
+                            Answer answer = new Answer(answereBody, answerName, answerUid, (String) key);
+                            answerArrayList.add(answer);
+                        }
+                    }
 
                     Question question = new Question(title, body, name, uid, dataSnapshot.getKey(), mGenre, bytes, answerArrayList);
                     mQuestionArrayList.add(question);   // Add ArrayList
@@ -205,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onCancelled(DatabaseError databaseError) {
         }
-    };
+    };   // for showing favorites
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -219,7 +241,7 @@ public class MainActivity extends AppCompatActivity {
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        final FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -245,19 +267,16 @@ public class MainActivity extends AppCompatActivity {
 
         // Set Navigation drawer
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        final ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, mToolbar, R.string.app_name, R.string.app_name);
+
+        final ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, mToolbar, R.string.app_name, R.string.app_name){
+            public void onDrawerOpened(View drawerView){
+                invalidateOptionsMenu();
+            }
+        };
         drawer.addDrawerListener(toggle);
         toggle.syncState();     // Synchronize  with the linked DrawerLayout
 
         final NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);   // Get ID of NavigationView
-//1214
-//        FirebaseUser usr = FirebaseAuth.getInstance().getCurrentUser();
-//        if(usr == null){
-//            navigationView.getMenu().removeItem(R.id.nav_favorite);
-//        } else {
-//            navigationView.getMenu().add(nav_menu, R.id.nav_favorite, 5, "お気に入り");
-//        }
-//1214
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener(){
             @Override
             public boolean onNavigationItemSelected(MenuItem item){ // If chosen any items on NavigationView
@@ -278,9 +297,16 @@ public class MainActivity extends AppCompatActivity {
                 } else if (id == R.id.nav_computer){
                     mToolbar.setTitle("コンピューター");
                     mGenre = 4;
-                } else if (id == nav_favorite){
+                } else if (id == R.id.nav_favorite){
                     mToolbar.setTitle("お気に入り");
                     mFavFlag = true;
+
+                    FirebaseUser usr = FirebaseAuth.getInstance().getCurrentUser();
+                    if(usr == null) {
+                        mToolbar.setTitle(R.string.app_name);
+                        Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
+                        startActivity(intent);
+                    }
                 }
 
                 DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -297,12 +323,16 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if(mFavFlag == true){
                     FirebaseUser usr = FirebaseAuth.getInstance().getCurrentUser();
-                    mGenreRef = mDatabaseReference.child(Const.UsersPATH).child(usr.getUid()).child(Const.FavPATH);
-                    mGenreRef.addChildEventListener(mFavEventListener);
+                    if(usr != null){
+                        mGenreRef = mDatabaseReference.child(Const.UsersPATH).child(usr.getUid()).child(Const.FavPATH);
+                        mGenreRef.addChildEventListener(mFavEventListener);
+                        fab.setVisibility(INVISIBLE);
+                    }
+                } else {
+                    mGenreRef = mDatabaseReference.child(Const.ContentsPATH).child(String.valueOf(mGenre));
+                    mGenreRef.addChildEventListener(mEventListener);
+                    fab.setVisibility(VISIBLE);
                 }
-                mGenreRef = mDatabaseReference.child(Const.ContentsPATH).child(String.valueOf(mGenre));
-                mGenreRef.addChildEventListener(mEventListener);
-
 
                 return true;
             }
